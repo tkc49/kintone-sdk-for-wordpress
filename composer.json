@@ -2,7 +2,7 @@
 	"name": "tkc49/kintone-sdk-for-wordpress",
 	"description": "Kintone sdk for WordPress is library for WordPress",
 	"license": "GPL-2.0-or-later",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"homepage": "https://github.com/tkc49/kintone-sdk-for-wordpress",
 	"keywords": ["WordPress", "kintone"],
 	"authors": [
@@ -12,19 +12,10 @@
 		}
 	],
 	"require": {
-		"php": ">=7.2.0"
+		"php": ">=5.6"
 	},
 	"require-dev": {
-		"squizlabs/php_codesniffer": "*",
-		"wp-coding-standards/wpcs": "*",
-		"phpmd/phpmd": "2.*",
-		"phpunit/phpunit": "^5.7",
-		"doctrine/instantiator": "1.0.4",
-		"phpunit/php-token-stream": "1.4.11",
-		"phpdocumentor/reflection-docblock": "3.2.2",
-		"symfony/yaml": "3.4.1",
-		"pdepend/pdepend": "2.5.0",
-		"myclabs/deep-copy": "1.7.0"
+		"phpunit/phpunit": "^5.6"
 	},
 	"autoload": {
 		"psr-4": {
