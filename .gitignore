@@ -6,3 +6,4 @@ composer.lock
 /tests/
 .travis.yml
 phpunit.xml.dist
+
