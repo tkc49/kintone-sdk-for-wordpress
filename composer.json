@@ -1,8 +1,6 @@
 {
 	"name": "tkc49/kintone-sdk-for-wordpress",
 	"description": "Kintone sdk for WordPress is library for WordPress",
-	"minimum-stability": "dev",
-	"prefer-stable": true,
 	"license": "GPL-2.0-or-later",
 	"version": "1.0.0",
 	"homepage": "https://github.com/tkc49/kintone-sdk-for-wordpress",
