@@ -1,6 +1,6 @@
 <?php
 
-namespace tkc49\Kintone_SDK_For_WordPress;
+namespace Tkc49\Kintone_SDK_For_WordPress;
 
 final class Kintone_API
 {

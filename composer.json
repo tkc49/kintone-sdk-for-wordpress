@@ -19,7 +19,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"tkc49\\Kintone_SDK_For_WordPress\\" : "src/"
+			"Tkc49\\Kintone_SDK_For_WordPress\\" : "src/"
 		}
 	}
 
