@@ -1,9 +1,7 @@
 .DS_Store
 /vendor/
 .envrc
-composer.lock
 /bin/
 /tests/
 .travis.yml
 phpunit.xml.dist
-
