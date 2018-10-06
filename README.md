@@ -1,7 +1,5 @@
 # Kintone SDK for WordPress
 
-テスト
-
 ## Install
 ```
 $ composer require tkc49/kintone-sdk-for-wordpress
