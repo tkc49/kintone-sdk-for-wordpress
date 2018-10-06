@@ -1,5 +1,4 @@
 # Kintone SDK for WordPress
-test2
 
 ## Install
 ```
