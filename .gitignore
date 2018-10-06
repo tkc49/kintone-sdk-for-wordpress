@@ -2,3 +2,4 @@
 /vendor/
 .envrc
 composer.lock
+.idea/
