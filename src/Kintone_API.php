@@ -166,7 +166,7 @@ final class Kintone_API
     }
 
 
-    public static function getRecords( $kintone, $query, $limit = 100, $offset = 0  )
+    public static function getRecords( $kintone, $query, $limit = 100, $offset = 0, $fields = array()  )
     {
 
         if ( !intval( $kintone['app'] ) ) {
@@ -194,7 +194,7 @@ final class Kintone_API
 
             $current_loop_count++;
 
-            $result = Kintone_API::get( $kintone, $query .' limit ' . $limit. ' offset '. $offset);
+            $result = Kintone_API::get( $kintone, $query .' limit ' . $limit. ' offset '. $offset, $fields);
             if( !is_wp_error($result)){
 
                 $all_records = array_merge($all_records, $result['records']);
@@ -257,7 +257,7 @@ final class Kintone_API
     }
 
 
-    private static function get( $kintone, $query = '' )
+    private static function get( $kintone, $query = '', $fields = array() )
     {
 
         $defaults = array(
@@ -271,11 +271,20 @@ final class Kintone_API
         );
         $kintone = wp_parse_args( $kintone, $defaults );
         $query = urlencode( $query );
+
+        $count = 0;
+        $filed_txt = '';
+        foreach ( $fields as $field ){
+            $filed_txt .= '&fields['.$count.']=' . urlencode($field);
+            $count++;
+        }
+
         $url = sprintf(
-            'https://%s/k/v1/records.json?app=%d&totalCount=true&query=%s',
+            'https://%s/k/v1/records.json?app=%d&totalCount=true%s%s',
             $kintone['domain'],
             $kintone['app'],
-            $query
+            $query,
+            $filed_txt
         );
 
 
