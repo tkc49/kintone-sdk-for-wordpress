@@ -142,6 +142,40 @@ final class Kintone_API
 		);
 
 		$headers = Kintone_API::get_request_headers( $token, $basic_auth_user, $basic_auth_pass );
+	/*
+	 * Get field controls json from REST API
+	 * @param  string $token  API token
+	 * @param  string $app_id Kintone App ID
+	 * @return array		Form html
+	 * @since  0.1
+	 */
+	public static function get_field_json( $kintone )
+	{
+
+		$defaults = array(
+			'domain' => "",
+			'app' => "",
+			'login_name' => "",
+			'password' => "",
+			'token' => "",
+			'basic_auth_user' => "",
+			'basic_auth_pass' => ""
+		);
+		$kintone = wp_parse_args( $kintone, $defaults );
+
+
+		if ( !intval( $kintone['app'] ) ) {
+			return new \WP_Error( 'kintone', 'Application ID must be numeric.' );
+		}
+
+		$url = sprintf(
+			'https://%s/k/v1/app/form/fields.json?app=%d',
+			$kintone['domain'],
+			$kintone['app']
+		);
+
+		$headers = Kintone_API::get_request_headers( $kintone['login_name'], $kintone['password'], $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
 		}
