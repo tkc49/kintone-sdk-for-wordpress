@@ -141,7 +141,30 @@ final class Kintone_API
 			$app_id
 		);
 
-		$headers = Kintone_API::get_request_headers( $token, $basic_auth_user, $basic_auth_pass );
+		$headers = Kintone_API::get_request_headers( "","", $token, $basic_auth_user, $basic_auth_pass );
+		if ( is_wp_error( $headers ) ) {
+			return $headers;
+		}
+
+		$res = wp_remote_get(
+			$url,
+			array(
+				'headers' => $headers
+			)
+		);
+
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		} else {
+			$return_value = json_decode( $res['body'], true );
+			if ( isset( $return_value['message'] ) && isset( $return_value['code'] ) ) {
+				return new \WP_Error( $return_value['code'], $return_value['message'] );
+			} else {
+				return $return_value['properties'];
+			}
+		}
+	}
+
 	/*
 	 * Get field controls json from REST API
 	 * @param  string $token  API token
