@@ -270,7 +270,10 @@ final class Kintone_API
             'basic_auth_pass' => ""
         );
         $kintone = wp_parse_args( $kintone, $defaults );
-        $query = urlencode( $query );
+
+        if( $query ){
+            $query = '&query='.urlencode( $query );
+        }
 
         $count = 0;
         $filed_txt = '';
