@@ -223,70 +223,69 @@ final class Kintone_API
 	}
 
 
-	public static function getRecords( $kintone, $query, $limit = 100, $offset = 0, $fields = array()  )
-	{
-
-		if ( !intval( $kintone['app'] ) ) {
+	public static function getRecords( $kintone, $query, $limit = 100, $offset = 0, $fields = array(), $total_count_flag = false ) {
+		if ( ! intval( $kintone['app'] ) ) {
 			return new \WP_Error( 'kintone', 'Application ID must be numeric.' );
 		}
 
 		$all_flg = false;
-		if( $limit === -1 ){
+		if ( $limit === - 1 ) {
 			$all_flg = true;
-			$limit = self::MAX_GET_RECORDS ;
-		}elseif( self::MAX_GET_RECORDS < $limit ){
+			$limit   = self::MAX_GET_RECORDS;
+		} elseif ( self::MAX_GET_RECORDS < $limit ) {
 
-			$limit = self::MAX_GET_RECORDS ;
-			$loop_count = ceil($limit / self::MAX_GET_RECORDS );
-			$hamidashi = $limit - floor($limit / self::MAX_GET_RECORDS) * self::MAX_GET_RECORDS;
+			$limit      = self::MAX_GET_RECORDS;
+			$loop_count = ceil( $limit / self::MAX_GET_RECORDS );
+			$hamidashi  = $limit - floor( $limit / self::MAX_GET_RECORDS ) * self::MAX_GET_RECORDS;
 
 		}
 
 		$all_records = [];
-		$continue = true;
+		$continue    = true;
 
 		$current_loop_count = 0;
+		$totalCount         = 0;
 
-		while ( $continue ){
+		while ( $continue ) {
 
-			$current_loop_count++;
+			$current_loop_count ++;
 
-			$result = Kintone_API::get( $kintone, $query .' limit ' . $limit. ' offset '. $offset, $fields);
-			if( !is_wp_error($result)){
+			$result = Kintone_API::get( $kintone, $query . ' limit ' . $limit . ' offset ' . $offset, $fields );
+			if ( ! is_wp_error( $result ) ) {
 
-				$all_records = array_merge($all_records, $result['records']);
+				$all_records = array_merge( $all_records, $result['records'] );
 
 				$totalCount = $result['totalCount'];
 				if ( $totalCount <= $limit ) {
 					// 再取得なし
 					$continue = false;
 
-				} else{
+				} else {
 
-					if( $all_flg ){
+					if ( $all_flg ) {
 
-						if( count($all_records) == $totalCount ){
+						if ( count( $all_records ) == $totalCount ) {
 							$continue = false;
-						}else{
+						} else {
 							$offset = $offset + $limit;
 						}
 
-					}else{
+					} else {
 
-						if( self::MAX_GET_RECORDS <= $limit ) {
+						if ( self::MAX_GET_RECORDS <= $limit ) {
 
 							// limit : 700 で totalCount : 900 の時
-							if ($current_loop_count == $loop_count) {
+							if ( $current_loop_count == $loop_count ) {
 								//  $loop_count : 2回で終了
 								$continue = false;
 							} else {
-								if ($current_loop_count == $loop_count - 1) {
+								if ( $current_loop_count == $loop_count - 1 ) {
 									$offset = $offset + $hamidashi;
 								} else {
 									$offset = $offset + $limit;
 								}
 							}
-						}else{
+						} else {
 
 							$continue = false;
 
@@ -295,20 +294,26 @@ final class Kintone_API
 					}
 				}
 
-			}else{
+			} else {
 
-				error_log('エラー');
-				error_log($result->get_error_code());
-				error_log($result->get_error_message());
-				error_log($query .' limit ' . $limit. ' offset '. $offset);
-				return new \WP_Error( $return_value['code'], $return_value['message'] );
+				error_log( 'エラー' );
+				error_log( $result->get_error_code() );
+				error_log( $result->get_error_message() );
+				error_log( $query . ' limit ' . $limit . ' offset ' . $offset );
+
+				return new \WP_Error( $result['code'], $result['message'] );
 
 
 			}
 
 
 		}
-		return $all_records;
+
+		if ( $total_count_flag ) {
+			return array( 'records' => $all_records, 'total_count' => $totalCount );
+		} else {
+			return $all_records;
+		}
 
 
 	}
