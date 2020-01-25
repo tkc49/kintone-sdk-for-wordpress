@@ -2,33 +2,31 @@
 
 namespace Tkc49\Kintone_SDK_For_WordPress;
 
-final class Kintone_API
-{
+final class Kintone_API {
 
-	const MAX_GET_RECORDS = 500;
+	const MAX_GET_RECORDS  = 500;
 	const MAX_POST_RECORDS = 100;
 
 	/*
 	 * constructor
 	 */
-	private function __construct()
-	{
+	private function __construct() {
 
 	}
 
 	/*
 	 * get instance
 	 */
-	public static function getInstance()
-	{
+	public static function getInstance() {
 		/**
 		 * a variable that keeps the sole instance.
 		 */
 		static $instance;
 
-		if ( !isset( $instance ) ) {
+		if ( ! isset( $instance ) ) {
 			$instance = new Kintone_API();
 		}
+
 		return $instance;
 	}
 
@@ -47,8 +45,7 @@ final class Kintone_API
 	 * @return array An array of auth header
 	 * @since  0.1
 	 */
-	public static function get_auth_token_header($token )
-	{
+	public static function get_auth_token_header( $token ) {
 		if ( $token ) {
 			return array( 'X-Cybozu-API-Token' => $token );
 		} else {
@@ -56,15 +53,13 @@ final class Kintone_API
 		}
 	}
 
-	public static function get_auth_user_header( $loginName, $password )
-	{
+	public static function get_auth_user_header( $loginName, $password ) {
 		if ( $loginName != "" && $password != "" ) {
-			return array( 'X-Cybozu-Authorization' => base64_encode($loginName . ':' . $password) );
+			return array( 'X-Cybozu-Authorization' => base64_encode( $loginName . ':' . $password ) );
 		} else {
 			return new \WP_Error( 'kintone', 'API Token is required' );
 		}
 	}
-
 
 
 	/*
@@ -74,11 +69,11 @@ final class Kintone_API
 	 * @return array An array of basic auth header
 	 * @since  0.1
 	 */
-	public static function get_basic_auth_header( $basic_auth_user = null, $basic_auth_pass = null )
-	{
+	public static function get_basic_auth_header( $basic_auth_user = null, $basic_auth_pass = null ) {
 		if ( $basic_auth_user && $basic_auth_pass ) {
-			$auth = base64_encode( $basic_auth_user.':'.$basic_auth_pass );
-			return array( 'Authorization' => 'Basic '.$auth );
+			$auth = base64_encode( $basic_auth_user . ':' . $basic_auth_pass );
+
+			return array( 'Authorization' => 'Basic ' . $auth );
 		} else {
 			return array();
 		}
@@ -91,28 +86,29 @@ final class Kintone_API
 	 * @return array An array of request headers
 	 * @since  0.1
 	 */
-	public static function get_request_headers($loginName, $password, $token, $basic_auth_user = null, $basic_auth_pass = null )
-	{
+	public static function get_request_headers( $loginName, $password, $token, $basic_auth_user = null, $basic_auth_pass = null ) {
 
-		if( $loginName != "" && $password != "" ){
+		if ( $loginName != "" && $password != "" ) {
 
-			if( is_wp_error( self::get_auth_user_header( $loginName, $password ) ) ){
+			if ( is_wp_error( self::get_auth_user_header( $loginName, $password ) ) ) {
 				return new \WP_Error( 'kintone', 'Login name & Password is required' );
 			}
 
 			$headers = array_merge(
-				self::get_auth_user_header( $loginName, $password ), self::get_basic_auth_header( $basic_auth_user, $basic_auth_pass )
+				self::get_auth_user_header( $loginName, $password ),
+				self::get_basic_auth_header( $basic_auth_user, $basic_auth_pass )
 			);
 
 
-		}else{
+		} else {
 
 			if ( is_wp_error( self::get_auth_token_header( $token ) ) ) {
 				return new \WP_Error( 'kintone', 'API Token is required' );
 			}
 
 			$headers = array_merge(
-				self::get_auth_token_header( $token ), self::get_basic_auth_header( $basic_auth_user, $basic_auth_pass )
+				self::get_auth_token_header( $token ),
+				self::get_basic_auth_header( $basic_auth_user, $basic_auth_pass )
 			);
 
 		}
@@ -129,9 +125,8 @@ final class Kintone_API
 	 * @return array		Form html
 	 * @since  0.1
 	 */
-	public static function get_form_json($token, $app_id, $domain = null, $basic_auth_user = null, $basic_auth_pass = null )
-	{
-		if ( !intval( $app_id ) ) {
+	public static function get_form_json( $token, $app_id, $domain = null, $basic_auth_user = null, $basic_auth_pass = null ) {
+		if ( ! intval( $app_id ) ) {
 			return new \WP_Error( 'kintone', 'Application ID must be numeric.' );
 		}
 
@@ -141,7 +136,7 @@ final class Kintone_API
 			$app_id
 		);
 
-		$headers = Kintone_API::get_request_headers( "","", $token, $basic_auth_user, $basic_auth_pass );
+		$headers = Kintone_API::get_request_headers( "", "", $token, $basic_auth_user, $basic_auth_pass );
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
 		}
@@ -172,22 +167,21 @@ final class Kintone_API
 	 * @return array		Form html
 	 * @since  0.1
 	 */
-	public static function get_field_json( $kintone )
-	{
+	public static function get_field_json( $kintone ) {
 
 		$defaults = array(
-			'domain' => "",
-			'app' => "",
-			'login_name' => "",
-			'password' => "",
-			'token' => "",
+			'domain'          => "",
+			'app'             => "",
+			'login_name'      => "",
+			'password'        => "",
+			'token'           => "",
 			'basic_auth_user' => "",
 			'basic_auth_pass' => ""
 		);
-		$kintone = wp_parse_args( $kintone, $defaults );
+		$kintone  = wp_parse_args( $kintone, $defaults );
 
 
-		if ( !intval( $kintone['app'] ) ) {
+		if ( ! intval( $kintone['app'] ) ) {
 			return new \WP_Error( 'kintone', 'Application ID must be numeric.' );
 		}
 
@@ -319,29 +313,28 @@ final class Kintone_API
 	}
 
 
-	private static function get( $kintone, $query = '', $fields = array() )
-	{
+	private static function get( $kintone, $query = '', $fields = array() ) {
 
 		$defaults = array(
-			'domain' => "",
-			'app' => "",
-			'login_name' => "",
-			'password' => "",
-			'token' => "",
+			'domain'          => "",
+			'app'             => "",
+			'login_name'      => "",
+			'password'        => "",
+			'token'           => "",
 			'basic_auth_user' => "",
 			'basic_auth_pass' => ""
 		);
-		$kintone = wp_parse_args( $kintone, $defaults );
+		$kintone  = wp_parse_args( $kintone, $defaults );
 
-		if( $query ){
-			$query = '&query='.urlencode( $query );
+		if ( $query ) {
+			$query = '&query=' . urlencode( $query );
 		}
 
-		$count = 0;
+		$count     = 0;
 		$filed_txt = '';
-		foreach ( $fields as $field ){
-			$filed_txt .= '&fields['.$count.']=' . urlencode($field);
-			$count++;
+		foreach ( $fields as $field ) {
+			$filed_txt .= '&fields[' . $count . ']=' . urlencode( $field );
+			$count ++;
 		}
 
 		$url = sprintf(
@@ -372,7 +365,7 @@ final class Kintone_API
 			$return_value = json_decode( $res['body'], true );
 			if ( isset( $return_value['message'] ) && isset( $return_value['code'] ) ) {
 
-				error_log(var_export($return_value, true));
+				error_log( var_export( $return_value, true ) );
 
 				return new \WP_Error( $return_value['code'], $return_value['message'] );
 			} else {
@@ -395,8 +388,7 @@ final class Kintone_API
 	 * @return array			true or WP_Error object
 	 * @since  0.1
 	 */
-	public static function post( $kintone, $data )
-	{
+	public static function post( $kintone, $data ) {
 
 
 		// Change Hosoya
@@ -406,9 +398,9 @@ final class Kintone_API
 		);
 
 		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
-			$headers = Kintone_API::get_request_headers( "","", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 		} else {
-			$headers = Kintone_API::get_request_headers( "","", $kintone['token'] );
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
 		}
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -418,7 +410,7 @@ final class Kintone_API
 
 
 		$body = array(
-			'app'	=> $kintone['app'],
+			'app'    => $kintone['app'],
 			'record' => $data,
 		);
 
@@ -427,25 +419,24 @@ final class Kintone_API
 			array(
 				'method'  => 'POST',
 				'headers' => $headers,
-				'body'	=> json_encode( $body ),
+				'body'    => json_encode( $body ),
 			)
 		);
 
 		if ( is_wp_error( $res ) ) {
 			return $res;
-		} elseif (  $res['response']['code'] !== 200 ) {
+		} elseif ( $res['response']['code'] !== 200 ) {
 			$message = json_decode( $res['body'], true );
-			$e = new \WP_Error();
+			$e       = new \WP_Error();
 			$e->add( 'validation-error', $message['message'], $message );
+
 			return $e;
 		} else {
 			return true;
 		}
 	}
 
-	public static function put( $kintone, $data )
-	{
-
+	public static function put( $kintone, $data, $update_key_date = array() ) {
 
 		// Change Hosoya
 		$url = sprintf(
@@ -454,9 +445,9 @@ final class Kintone_API
 		);
 
 		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
-			$headers = Kintone_API::get_request_headers( "","", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 		} else {
-			$headers = Kintone_API::get_request_headers( "","", $kintone['token'] );
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
 		}
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -465,27 +456,37 @@ final class Kintone_API
 		$headers['Content-Type'] = 'application/json';
 
 
-		$body = array(
-			'app'	=> $kintone['app'],
-			'id' => $kintone['id'],
-			'record' => $data
-		);
+		if ( empty( $update_key_date ) ) {
+			$body = array(
+				'app'    => $kintone['app'],
+				'id'     => $kintone['id'],
+				'record' => $data
+			);
+		} else {
+			$body = array(
+				'app'       => $kintone['app'],
+				'record'    => $data,
+				'updateKey' => $update_key_date,
+			);
+		}
+
 
 		$res = wp_remote_post(
 			$url,
 			array(
 				'method'  => 'PUT',
 				'headers' => $headers,
-				'body'	=> json_encode( $body ),
+				'body'    => json_encode( $body ),
 			)
 		);
 
 		if ( is_wp_error( $res ) ) {
 			return $res;
-		} elseif (  $res['response']['code'] !== 200 ) {
+		} elseif ( $res['response']['code'] !== 200 ) {
 			$message = json_decode( $res['body'], true );
-			$e = new \WP_Error();
+			$e       = new \WP_Error();
 			$e->add( 'validation-error', $message['message'], $message );
+
 			return $e;
 		} else {
 			return true;
