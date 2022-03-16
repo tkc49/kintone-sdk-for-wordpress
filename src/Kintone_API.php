@@ -595,4 +595,64 @@ final class Kintone_API {
 		}
 	}
 
+	public static function get_attachement_file( $kintone, $file_info ) {
+		$url = sprintf(
+			'https://%s/k/v1/file.json?fileKey=%s',
+			$kintone['domain'],
+			$file_info['fileKey']
+		);
+
+		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
+			$headers = self::get_request_headers( '', '', $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+		} else {
+			$headers = self::get_request_headers( '', '', $kintone['token'] );
+		}
+		if ( is_wp_error( $headers ) ) {
+			return $headers;
+		}
+
+		$headers['Content-Type'] = $file_info['fileKey'];
+
+		$res = wp_remote_post(
+			$url,
+			array(
+				'method'  => 'GET',
+				'headers' => $headers,
+			)
+		);
+
+		return $res['body'];
+	}
+
+	public static function get_attachement_file_key( $kintone_domain ) {
+		$file_path = $_FILES['file']['tmp_name'];
+		$file_name = $_FILES['file']['name'];
+		$finfo     = finfo_open( FILEINFO_MIME_TYPE );
+		$mime_type = finfo_file( $finfo, $file_path );
+		$file_data = file_get_contents( $file_path );
+		finfo_close( $finfo );
+
+		$boundary = '----' . microtime( true );
+		$body     = '--' . $boundary . "\r\n" . 'Content-Disposition: form-data; name="file"; filename="' . $file_name . '"' . "\r\n" . 'Content-Type: ' . $mime_type . "\r\n\r\n" . $file_data . "\r\n" . '--' . $boundary . '--';
+
+		$request_url = sprintf(
+			'https://%s/k/v1/file.json',
+			$kintone_domain
+		);
+
+		$res = wp_remote_post(
+			$request_url,
+			array(
+				'headers' => array(
+					'Content-Type'       => "multipart/form-data; boundary={$boundary}",
+					'X-Cybozu-API-Token' => 'b20o8XvVk6ycM5f9eEqRkxxdoHCEvJ0psvT1KHFm',
+					'Content-Length'     => strlen( $body ),
+				),
+				'body'    => $body,
+			)
+		);
+
+		return $res['body'];
+	}
+
 }
