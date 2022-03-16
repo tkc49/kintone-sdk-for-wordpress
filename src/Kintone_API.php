@@ -216,6 +216,63 @@ final class Kintone_API {
 		}
 	}
 
+	public static function getAllRecordsSortById( $kintone, $param_query, $fields = array(), $total_count_flag = false ) {
+		if ( ! intval( $kintone['app'] ) ) {
+			return new \WP_Error( 'kintone', 'Application ID must be numeric.' );
+		}
+
+
+		$limit       = self::MAX_GET_RECORDS;
+		$all_records = [];
+
+		$totalCount = 0;
+		$currentId  = 0;
+
+		$fields[] = '$id';
+		$fields = array_unique($fields);
+
+		$continue = true;
+		while ( $continue ) {
+
+			if ( $param_query ) {
+				$query = $param_query . ' and $id > "' . $currentId . '" order by $id asc';
+			} else {
+				$query = '$id > "' . $currentId . '" order by $id asc';
+			}
+
+			$result = Kintone_API::get( $kintone, $query . ' limit ' . $limit, $fields );
+			if ( ! is_wp_error( $result ) ) {
+
+				$all_records = array_merge( $all_records, $result['records'] );
+
+				$totalCount = $result['totalCount'];
+				if ( $totalCount <= $limit ) {
+					// 再取得なし
+					$continue = false;
+
+				} else {
+					if ( count( $all_records ) === $totalCount ) {
+						$continue = false;
+					} else {
+						$currentId = $result['records'][ count( $result['records'] ) - 1 ]['$id']['value'];
+					}
+				}
+			} else {
+
+				error_log( 'エラー' );
+				error_log( $result->get_error_code() );
+				error_log( $result->get_error_message() );
+
+				return new \WP_Error( $result['code'], $result['message'] );
+			}
+		}
+
+		if ( $total_count_flag ) {
+			return array( 'records' => $all_records, 'total_count' => $totalCount );
+		} else {
+			return $all_records;
+		}
+	}
 
 	public static function getRecords( $kintone, $query, $limit = 100, $offset = 0, $fields = array(), $total_count_flag = false ) {
 		if ( ! intval( $kintone['app'] ) ) {
@@ -470,6 +527,51 @@ final class Kintone_API {
 			);
 		}
 
+
+		$res = wp_remote_post(
+			$url,
+			array(
+				'method'  => 'PUT',
+				'headers' => $headers,
+				'body'    => json_encode( $body ),
+			)
+		);
+
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		} elseif ( $res['response']['code'] !== 200 ) {
+			$message = json_decode( $res['body'], true );
+			$e       = new \WP_Error();
+			$e->add( 'validation-error', $message['message'], $message );
+
+			return $e;
+		} else {
+			return true;
+		}
+	}
+
+	public static function puts( $kintone, $data ) {
+
+		// Change Hosoya
+		$url = sprintf(
+			'https://%s/k/v1/records.json',
+			$kintone['domain']
+		);
+
+		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+		} else {
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
+		}
+		if ( is_wp_error( $headers ) ) {
+			return $headers;
+		}
+
+		$headers['Content-Type'] = 'application/json';
+		$body                    = array(
+			'app'     => $kintone['app'],
+			'records' => $data
+		);
 
 		$res = wp_remote_post(
 			$url,
