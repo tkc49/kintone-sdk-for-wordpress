@@ -2,6 +2,11 @@
 
 namespace Tkc49\Kintone_SDK_For_WordPress;
 
+/**
+ * Class Kintone_API
+ *
+ * @package Tkc49\Kintone_SDK_For_WordPress
+ */
 final class Kintone_API {
 
 	const MAX_GET_RECORDS  = 500;
