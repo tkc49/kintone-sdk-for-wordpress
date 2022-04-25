@@ -263,12 +263,7 @@ final class Kintone_API {
 					}
 				}
 			} else {
-
-				error_log( 'エラー' );
-				error_log( $result->get_error_code() );
-				error_log( $result->get_error_message() );
-
-				return new \WP_Error( $result['code'], $result['message'] );
+				return new \WP_Error( $result->get_error_code(), $result->get_error_message() );
 			}
 		}
 
