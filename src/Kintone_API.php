@@ -493,6 +493,99 @@ final class Kintone_API {
 		}
 	}
 
+	public static function posts( $kintone, $data ) {
+
+
+		// Change Hosoya
+		$url = sprintf(
+			'https://%s/k/v1/records.json',
+			$kintone['domain']
+		);
+
+		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+		} else {
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
+		}
+		if ( is_wp_error( $headers ) ) {
+			return $headers;
+		}
+
+		$headers['Content-Type'] = 'application/json';
+
+
+		$body = array(
+			'app'    => $kintone['app'],
+			'records' => $data,
+		);
+
+		$res = wp_remote_post(
+			$url,
+			array(
+				'method'  => 'POST',
+				'headers' => $headers,
+				'body'    => json_encode( $body ),
+			)
+		);
+
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		} elseif ( $res['response']['code'] !== 200 ) {
+			$message = json_decode( $res['body'], true );
+			$e       = new \WP_Error();
+			$e->add( 'validation-error', $message['message'], $message );
+
+			return $e;
+		} else {
+			return true;
+		}
+	}
+	public static function delete($kintone, $ids){
+		// Change Hosoya
+		$url = sprintf(
+			'https://%s/k/v1/records.json',
+			$kintone['domain']
+		);
+
+		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+		} else {
+			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
+		}
+		if ( is_wp_error( $headers ) ) {
+			return $headers;
+		}
+
+		$headers['Content-Type'] = 'application/json';
+
+
+		$body = array(
+			'app'    => $kintone['app'],
+			'ids' => $ids,
+		);
+
+		$res = wp_remote_post(
+			$url,
+			array(
+				'method'  => 'DELETE',
+				'headers' => $headers,
+				'body'    => json_encode( $body ),
+			)
+		);
+
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		} elseif ( $res['response']['code'] !== 200 ) {
+			$message = json_decode( $res['body'], true );
+			$e       = new \WP_Error();
+			$e->add( 'validation-error', $message['message'], $message );
+
+			return $e;
+		} else {
+			return true;
+		}
+	}
+
 	public static function put( $kintone, $data, $update_key_date = array() ) {
 
 		// Change Hosoya
@@ -624,7 +717,7 @@ final class Kintone_API {
 		return $res['body'];
 	}
 
-	public static function get_attachement_file_key( $kintone_domain ) {
+	public static function get_attachement_file_key( $kintone ) {
 		$file_path = $_FILES['file']['tmp_name'];
 		$file_name = $_FILES['file']['name'];
 		$finfo     = finfo_open( FILEINFO_MIME_TYPE );
@@ -637,7 +730,7 @@ final class Kintone_API {
 
 		$request_url = sprintf(
 			'https://%s/k/v1/file.json',
-			$kintone_domain
+			$kintone['domain']
 		);
 
 		$res = wp_remote_post(
@@ -645,7 +738,7 @@ final class Kintone_API {
 			array(
 				'headers' => array(
 					'Content-Type'       => "multipart/form-data; boundary={$boundary}",
-					'X-Cybozu-API-Token' => 'b20o8XvVk6ycM5f9eEqRkxxdoHCEvJ0psvT1KHFm',
+					'X-Cybozu-API-Token' => $kintone['token'],
 					'Content-Length'     => strlen( $body ),
 				),
 				'body'    => $body,
@@ -655,4 +748,32 @@ final class Kintone_API {
 		return $res['body'];
 	}
 
+	public static function get_attachement_file_key_from_url( $kintone, $url, $file_name ) {
+		$file_data = file_get_contents( $url );
+		$enc_file   = base64_encode( $file_data );
+		$img_info  = getimagesize( 'data:application/octet-stream;base64,' . $enc_file );
+
+		$boundary = '----' . microtime( true );
+		$body     = '--' . $boundary . "\r\n" . 'Content-Disposition: form-data; name="file"; filename="' . $file_name . '"' . "\r\n" . 'Content-Type: ' . $img_info['mime'] . "\r\n\r\n" . $file_data . "\r\n" . '--' . $boundary . '--';
+
+		$request_url = sprintf(
+			'https://%s/k/v1/file.json',
+			$kintone['domain']
+		);
+
+		$res = wp_remote_post(
+			$request_url,
+			array(
+				'headers' => array(
+					'Content-Type'       => "multipart/form-data; boundary={$boundary}",
+					'X-Cybozu-API-Token' => $kintone['token'],
+					'Content-Length'     => strlen( $body ),
+				),
+				'body'    => $body,
+			)
+		);
+		$file_key           = json_decode( $res['body'], true );
+
+		return $file_key;
+	}
 }
