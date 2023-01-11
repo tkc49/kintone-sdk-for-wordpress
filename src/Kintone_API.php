@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * Kintone_SDK_For_WordPress
+ *
+ * @version 1.7.1
+ */
 namespace Tkc49\Kintone_SDK_For_WordPress;
 
 /**

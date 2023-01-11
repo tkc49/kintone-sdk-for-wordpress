@@ -20,16 +20,21 @@ $kintone = array(
 );
 
 $data = array(
-    'field_code' => array( 
-        'value' => 'your-value' 
+    'field_code' => array(
+        'value' => 'your-value'
     ),
-    'field_code' => array( 
-        'value' => 'your-value' 
+    'field_code' => array(
+        'value' => 'your-value'
     ),
-    'field_code' => array( 
-        'value' => 'your-value' 
+    'field_code' => array(
+        'value' => 'your-value'
     ),
 );
 new tkc49\Kintone_SDK_For_WordPress\Kintone_API::post( $kintone, $data );
 ```
 
+## Changelog
+
+1.7.0 (2023-01-11)
+エラー対応
+Uncaught Error: Cannot use object of type WP_Error as array
