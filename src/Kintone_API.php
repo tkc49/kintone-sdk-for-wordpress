@@ -352,9 +352,7 @@ final class Kintone_API {
 				error_log( $result->get_error_message() );
 				error_log( $query . ' limit ' . $limit . ' offset ' . $offset );
 
-				return new \WP_Error( $result['code'], $result['message'] );
-
-
+				return $result;
 			}
 
 
