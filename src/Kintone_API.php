@@ -287,7 +287,7 @@ final class Kintone_API {
 		if ( $limit === - 1 ) {
 			$all_flg = true;
 			$limit   = self::MAX_GET_RECORDS;
-		} elseif ( self::MAX_GET_RECORDS < $limit ) {
+		} elseif ( self::MAX_GET_RECORDS <= $limit ) {
 
 			$limit      = self::MAX_GET_RECORDS;
 			$loop_count = ceil( $limit / self::MAX_GET_RECORDS );
