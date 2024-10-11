@@ -2,7 +2,7 @@
 /**
  * Kintone_SDK_For_WordPress
  *
- * @version 1.7.1
+ * @version 1.7.2
  */
 namespace Tkc49\Kintone_SDK_For_WordPress;
 
@@ -16,11 +16,10 @@ final class Kintone_API {
 	const MAX_GET_RECORDS  = 500;
 	const MAX_POST_RECORDS = 100;
 
-	/*
-	 * constructor
+	/**
+	 * Constructor
 	 */
 	private function __construct() {
-
 	}
 
 	/*
@@ -28,7 +27,7 @@ final class Kintone_API {
 	 */
 	public static function getInstance() {
 		/**
-		 * a variable that keeps the sole instance.
+		 * A variable that keeps the sole instance.
 		 */
 		static $instance;
 
@@ -39,18 +38,21 @@ final class Kintone_API {
 		return $instance;
 	}
 
-	/*
-	 * don't allow you to clone the instance.
+	/**
+	 * Don't allow you to clone the instance.
+	 *
+	 * @throws \RuntimeException .
 	 */
-	public final function __clone() {
-		throw new RuntimeException( 'Clone is not allowed against ' );
+	public function __clone() {
+		throw new \RuntimeException( 'Clone is not allowed against ' );
 	}
 
 
-	/*
-	 * Get Kintone auth header from Options API
+	/**
+	 * Get Kintone auth header from Options API.
 	 * https://cybozudev.zendesk.com/hc/ja/articles/201941754-REST-API%E3%81%AE%E5%85%B1%E9%80%9A%E4%BB%95%E6%A7%98#step7
-	 * @param  none
+	 *
+	 * @param  string $token API token.
 	 * @return array An array of auth header
 	 * @since  0.1
 	 */
@@ -62,19 +64,28 @@ final class Kintone_API {
 		}
 	}
 
-	public static function get_auth_user_header( $loginName, $password ) {
-		if ( $loginName != "" && $password != "" ) {
-			return array( 'X-Cybozu-Authorization' => base64_encode( $loginName . ':' . $password ) );
+	/**
+	 * Get Kintone auth user header from Options API.
+	 *
+	 * @param  string $login_name ログイン名.
+	 * @param  string $password パスワード.
+	 * @return array An array of auth user header
+	 * @since  0.1
+	 */
+	public static function get_auth_user_header( $login_name, $password ) {
+		if ( '' !== $login_name && '' !== $password ) {
+			return array( 'X-Cybozu-Authorization' => base64_encode( $login_name . ':' . $password ) );
 		} else {
 			return new \WP_Error( 'kintone', 'API Token is required' );
 		}
 	}
 
 
-	/*
-	 * Get Kintone basic auth header from Options API
-	 * https://cybozudev.zendesk.com/hc/ja/articles/201941754-REST-API%E3%81%AE%E5%85%B1%E9%80%9A%E4%BB%95%E6%A7%98#step8
-	 * @param  none
+	/**
+	 * Get Kintone basic auth header from Options API.
+	 *
+	 * @param  string $basic_auth_user ベーシック認証ユーザー名.
+	 * @param  string $basic_auth_pass ベーシック認証パスワード.
 	 * @return array An array of basic auth header
 	 * @since  0.1
 	 */
@@ -89,26 +100,27 @@ final class Kintone_API {
 	}
 
 
-	/*
-	 * Get Kintone request headers from Options API
-	 * @param  none
+	/**
+	 * Get Kintone request headers from Options API.
+	 *
+	 * @param  string $login_name ログイン名.
+	 * @param  string $password パスワード.
+	 * @param  string $token APIトークン.
+	 * @param  string $basic_auth_user ベーシック認証ユーザー名.
+	 * @param  string $basic_auth_pass ベーシック認証パスワード.
 	 * @return array An array of request headers
 	 * @since  0.1
 	 */
-	public static function get_request_headers( $loginName, $password, $token, $basic_auth_user = null, $basic_auth_pass = null ) {
+	public static function get_request_headers( $login_name, $password, $token, $basic_auth_user = null, $basic_auth_pass = null ) {
 
-		if ( $loginName != "" && $password != "" ) {
-
-			if ( is_wp_error( self::get_auth_user_header( $loginName, $password ) ) ) {
+		if ( '' !== $login_name && '' !== $password ) {
+			if ( is_wp_error( self::get_auth_user_header( $login_name, $password ) ) ) {
 				return new \WP_Error( 'kintone', 'Login name & Password is required' );
 			}
-
 			$headers = array_merge(
-				self::get_auth_user_header( $loginName, $password ),
+				self::get_auth_user_header( $login_name, $password ),
 				self::get_basic_auth_header( $basic_auth_user, $basic_auth_pass )
 			);
-
-
 		} else {
 
 			if ( is_wp_error( self::get_auth_token_header( $token ) ) ) {
@@ -121,17 +133,19 @@ final class Kintone_API {
 			);
 
 		}
-
-
 		return $headers;
 	}
 
 
-	/*
-	 * Get form controls json from REST API
-	 * @param  string $token  API token
-	 * @param  string $app_id Kintone App ID
-	 * @return array		Form html
+	/**
+	 * Get form controls json from REST API.
+	 *
+	 * @param  string $token  API token.
+	 * @param  string $app_id Kintone App ID.
+	 * @param  string $domain ドメイン.
+	 * @param  string $basic_auth_user ベーシック認証ユーザー名.
+	 * @param  string $basic_auth_pass ベーシック認証パスワード.
+	 * @return array Form html.
 	 * @since  0.1
 	 */
 	public static function get_form_json( $token, $app_id, $domain = null, $basic_auth_user = null, $basic_auth_pass = null ) {
@@ -145,7 +159,7 @@ final class Kintone_API {
 			$app_id
 		);
 
-		$headers = Kintone_API::get_request_headers( "", "", $token, $basic_auth_user, $basic_auth_pass );
+		$headers = self::get_request_headers( '', '', $token, $basic_auth_user, $basic_auth_pass );
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
 		}
@@ -153,7 +167,7 @@ final class Kintone_API {
 		$res = wp_remote_get(
 			$url,
 			array(
-				'headers' => $headers
+				'headers' => $headers,
 			)
 		);
 
@@ -169,26 +183,32 @@ final class Kintone_API {
 		}
 	}
 
-	/*
-	 * Get field controls json from REST API
-	 * @param  string $token  API token
-	 * @param  string $app_id Kintone App ID
-	 * @return array		Form html
+	/**
+	 * Get field controls json from REST API.
+	 *
+	 * @param  array $kintone  Shortcode attributes it need for auth.
+	 *  $kintone['domain'] .
+	 *  $kintone['app'] .
+	 *  $kintone['login_name'] .
+	 *  $kintone['password'] .
+	 *  $kintone['token'] .
+	 *  $kintone['basic_auth_user'] .
+	 *  $kintone['basic_auth_pass'] .
+	 * @return array Form html
 	 * @since  0.1
 	 */
 	public static function get_field_json( $kintone ) {
 
 		$defaults = array(
-			'domain'          => "",
-			'app'             => "",
-			'login_name'      => "",
-			'password'        => "",
-			'token'           => "",
-			'basic_auth_user' => "",
-			'basic_auth_pass' => ""
+			'domain'          => '',
+			'app'             => '',
+			'login_name'      => '',
+			'password'        => '',
+			'token'           => '',
+			'basic_auth_user' => '',
+			'basic_auth_pass' => '',
 		);
 		$kintone  = wp_parse_args( $kintone, $defaults );
-
 
 		if ( ! intval( $kintone['app'] ) ) {
 			return new \WP_Error( 'kintone', 'Application ID must be numeric.' );
@@ -200,7 +220,7 @@ final class Kintone_API {
 			$kintone['app']
 		);
 
-		$headers = Kintone_API::get_request_headers( $kintone['login_name'], $kintone['password'], $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+		$headers = self::get_request_headers( $kintone['login_name'], $kintone['password'], $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -209,7 +229,7 @@ final class Kintone_API {
 		$res = wp_remote_get(
 			$url,
 			array(
-				'headers' => $headers
+				'headers' => $headers,
 			)
 		);
 
@@ -225,46 +245,60 @@ final class Kintone_API {
 		}
 	}
 
+	/**
+	 * Get all records from Kintone API.
+	 *
+	 * @param  array   $kintone  Shortcode attributes it need for auth.
+	 *    $kintone['domain'] .
+	 *    $kintone['app'] .
+	 *    $kintone['login_name'] .
+	 *    $kintone['password'] .
+	 *    $kintone['token'] .
+	 *    $kintone['basic_auth_user'] .
+	 *    $kintone['basic_auth_pass'] .
+	 * @param   string  $param_query  Query string.
+	 * @param   array   $fields  Fields to get.
+	 * @param  boolean $total_count_flag  Whether to return total count.
+	 * @return array|WP_Error All records.
+	 * @since  0.1
+	 */
 	public static function getAllRecordsSortById( $kintone, $param_query, $fields = array(), $total_count_flag = false ) {
 		if ( ! intval( $kintone['app'] ) ) {
 			return new \WP_Error( 'kintone', 'Application ID must be numeric.' );
 		}
 
-
 		$limit       = self::MAX_GET_RECORDS;
-		$all_records = [];
+		$all_records = array();
 
-		$totalCount = 0;
-		$currentId  = 0;
+		$total_count = 0;
+		$current_id  = 0;
 
 		$fields[] = '$id';
-		$fields = array_unique($fields);
+		$fields   = array_unique( $fields );
 
 		$continue = true;
 		while ( $continue ) {
 
 			if ( $param_query ) {
-				$query = $param_query . ' and $id > "' . $currentId . '" order by $id asc';
+				$query = $param_query . ' and $id > "' . $current_id . '" order by $id asc';
 			} else {
-				$query = '$id > "' . $currentId . '" order by $id asc';
+				$query = '$id > "' . $current_id . '" order by $id asc';
 			}
 
-			$result = Kintone_API::get( $kintone, $query . ' limit ' . $limit, $fields );
+			$result = self::get( $kintone, $query . ' limit ' . $limit, $fields );
 			if ( ! is_wp_error( $result ) ) {
 
 				$all_records = array_merge( $all_records, $result['records'] );
 
-				$totalCount = $result['totalCount'];
-				if ( $totalCount <= $limit ) {
+				$total_count = $result['totalCount'];
+				if ( $total_count <= $limit ) {
 					// 再取得なし
 					$continue = false;
 
-				} else {
-					if ( count( $all_records ) === $totalCount ) {
+				} elseif ( count( $all_records ) === $total_count ) {
 						$continue = false;
-					} else {
-						$currentId = $result['records'][ count( $result['records'] ) - 1 ]['$id']['value'];
-					}
+				} else {
+					$current_id = $result['records'][ count( $result['records'] ) - 1 ]['$id']['value'];
 				}
 			} else {
 				return new \WP_Error( $result->get_error_code(), $result->get_error_message() );
@@ -272,116 +306,130 @@ final class Kintone_API {
 		}
 
 		if ( $total_count_flag ) {
-			return array( 'records' => $all_records, 'total_count' => $totalCount );
+			return array(
+				'records'     => $all_records,
+				'total_count' => $total_count,
+			);
 		} else {
 			return $all_records;
 		}
 	}
 
+	/**
+	 * Get records from Kintone API.
+	 *
+	 * @param  array   $kintone  Shortcode attributes it need for auth.
+	 *    $kintone['domain'] .
+	 *    $kintone['app'] .
+	 *    $kintone['login_name'] .
+	 *    $kintone['password'] .
+	 *    $kintone['token'] .
+	 *    $kintone['basic_auth_user'] .
+	 *    $kintone['basic_auth_pass'] .
+	 * @param  string  $query  Query string.
+	 * @param  int     $limit  Limit of records to get.
+	 * @param  int     $offset  Offset of records to get.
+	 * @param  array   $fields  Fields to get.
+	 * @param  boolean $total_count_flag  Whether to return total count.
+	 * @return array Records
+	 * @since  0.1
+	 */
 	public static function getRecords( $kintone, $query, $limit = 100, $offset = 0, $fields = array(), $total_count_flag = false ) {
 		if ( ! intval( $kintone['app'] ) ) {
 			return new \WP_Error( 'kintone', 'Application ID must be numeric.' );
 		}
 
 		$all_flg = false;
-		if ( $limit === - 1 ) {
+		if ( -1 === $limit ) {
 			$all_flg = true;
 			$limit   = self::MAX_GET_RECORDS;
 		} elseif ( self::MAX_GET_RECORDS <= $limit ) {
-
 			$limit      = self::MAX_GET_RECORDS;
 			$loop_count = ceil( $limit / self::MAX_GET_RECORDS );
 			$hamidashi  = $limit - floor( $limit / self::MAX_GET_RECORDS ) * self::MAX_GET_RECORDS;
-
 		}
 
-		$all_records = [];
+		$all_records = array();
 		$continue    = true;
 
 		$current_loop_count = 0;
-		$totalCount         = 0;
+		$total_count        = 0;
 
 		while ( $continue ) {
 
-			$current_loop_count ++;
+			++$current_loop_count;
 
-			$result = Kintone_API::get( $kintone, $query . ' limit ' . $limit . ' offset ' . $offset, $fields );
+			$result = self::get( $kintone, $query . ' limit ' . $limit . ' offset ' . $offset, $fields );
 			if ( ! is_wp_error( $result ) ) {
 
 				$all_records = array_merge( $all_records, $result['records'] );
 
-				$totalCount = $result['totalCount'];
-				if ( $totalCount <= $limit ) {
-					// 再取得なし
+				$total_count = $result['totalCount'];
+				if ( $total_count <= $limit ) {
+					// 再取得なし.
 					$continue = false;
 
-				} else {
+				} elseif ( $all_flg ) {
 
-					if ( $all_flg ) {
-
-						if ( count( $all_records ) == $totalCount ) {
-							$continue = false;
-						} else {
-							$offset = $offset + $limit;
-						}
-
+					if ( count( $all_records ) === $total_count ) {
+						$continue = false;
 					} else {
-
-						if ( self::MAX_GET_RECORDS <= $limit ) {
-
-							// limit : 700 で totalCount : 900 の時
-							if ( $current_loop_count == $loop_count ) {
-								//  $loop_count : 2回で終了
-								$continue = false;
-							} else {
-								if ( $current_loop_count == $loop_count - 1 ) {
-									$offset = $offset + $hamidashi;
-								} else {
-									$offset = $offset + $limit;
-								}
-							}
-						} else {
-
-							$continue = false;
-
-						}
-
+						$offset = $offset + $limit;
 					}
+				} elseif ( self::MAX_GET_RECORDS <= $limit ) {
+					if ( $current_loop_count === $loop_count ) {
+						// $loop_count : 2回で終了
+						$continue = false;
+					} elseif ( $current_loop_count === $loop_count - 1 ) {
+						$offset = $offset + $hamidashi;
+					} else {
+						$offset = $offset + $limit;
+					}
+				} else {
+					$continue = false;
 				}
-
 			} else {
-
-				error_log( 'エラー' );
-				error_log( $result->get_error_code() );
-				error_log( $result->get_error_message() );
-				error_log( $query . ' limit ' . $limit . ' offset ' . $offset );
-
 				return $result;
 			}
-
-
 		}
 
 		if ( $total_count_flag ) {
-			return array( 'records' => $all_records, 'total_count' => $totalCount );
+			return array(
+				'records'     => $all_records,
+				'total_count' => $total_count,
+			);
 		} else {
 			return $all_records;
 		}
-
-
 	}
 
 
+	/**
+	 * Get records from Kintone API.
+	 *
+	 * @param  array  $kintone  Shortcode attributes it need for auth.
+	 *   $kintone['domain'] .
+	 *   $kintone['app'] .
+	 *   $kintone['login_name'] .
+	 *   $kintone['password'] .
+	 *   $kintone['token'] .
+	 *   $kintone['basic_auth_user'] .
+	 *   $kintone['basic_auth_pass'] .
+	 * @param  string $query  Query string.
+	 * @param  array  $fields  Fields to get.
+	 * @return array|WP_Error Records
+	 * @since  0.1
+	 */
 	private static function get( $kintone, $query = '', $fields = array() ) {
 
 		$defaults = array(
-			'domain'          => "",
-			'app'             => "",
-			'login_name'      => "",
-			'password'        => "",
-			'token'           => "",
-			'basic_auth_user' => "",
-			'basic_auth_pass' => ""
+			'domain'          => '',
+			'app'             => '',
+			'login_name'      => '',
+			'password'        => '',
+			'token'           => '',
+			'basic_auth_user' => '',
+			'basic_auth_pass' => '',
 		);
 		$kintone  = wp_parse_args( $kintone, $defaults );
 
@@ -393,7 +441,7 @@ final class Kintone_API {
 		$filed_txt = '';
 		foreach ( $fields as $field ) {
 			$filed_txt .= '&fields[' . $count . ']=' . urlencode( $field );
-			$count ++;
+			++$count;
 		}
 
 		$url = sprintf(
@@ -404,8 +452,7 @@ final class Kintone_API {
 			$filed_txt
 		);
 
-
-		$headers = Kintone_API::get_request_headers( $kintone['login_name'], $kintone['password'], $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+		$headers = self::get_request_headers( $kintone['login_name'], $kintone['password'], $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -414,7 +461,7 @@ final class Kintone_API {
 		$res = wp_remote_get(
 			$url,
 			array(
-				'headers' => $headers
+				'headers' => $headers,
 			)
 		);
 
@@ -431,42 +478,39 @@ final class Kintone_API {
 				return $return_value;
 			}
 		}
-
 	}
 
 
-	/*
-	 * Send form data to Kintone API
-	 * @param  string $kintone  Shortcode attributes it need for auth.
-	 *  $kintone: domain
-	 *  $kintone: token
-	 *  $kintone: basic_auth_user
-	 *  $kintone: basic_auth_pass
-	 *  $kintone: app
-	 * @param  string $data	 $_POST data
-	 * @return array			true or WP_Error object
+	/**
+	 * Send form data to Kintone API.
+	 *
+	 * @param  array  $kintone  Shortcode attributes it need for auth.
+	 *  $kintone['domain'] .
+	 *  $kintone['token'] .
+	 *  $kintone['basic_auth_user'] .
+	 *  $kintone['basic_auth_pass'] .
+	 *  $kintone['app'] .
+	 * @param  string $data  $_POST data.
+	 * @return array true or WP_Error object
 	 * @since  0.1
 	 */
 	public static function post( $kintone, $data ) {
 
-
-		// Change Hosoya
 		$url = sprintf(
 			'https://%s/k/v1/record.json',
 			$kintone['domain']
 		);
 
 		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 		} else {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'] );
 		}
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
 		}
 
 		$headers['Content-Type'] = 'application/json';
-
 
 		$body = array(
 			'app'    => $kintone['app'],
@@ -495,19 +539,29 @@ final class Kintone_API {
 		}
 	}
 
+	/**
+	 * Send form data to Kintone API.
+	 *
+	 * @param  array  $kintone  Shortcode attributes it need for auth.
+	 *  $kintone['domain'] .
+	 *  $kintone['token'] .
+	 *  $kintone['basic_auth_user'] .
+	 *  $kintone['basic_auth_pass'] .
+	 *  $kintone['app'] .
+	 * @param  string $data  $_POST data.
+	 * @return array true or WP_Error object
+	 */
 	public static function posts( $kintone, $data ) {
 
-
-		// Change Hosoya
 		$url = sprintf(
 			'https://%s/k/v1/records.json',
 			$kintone['domain']
 		);
 
 		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 		} else {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'] );
 		}
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -515,9 +569,8 @@ final class Kintone_API {
 
 		$headers['Content-Type'] = 'application/json';
 
-
 		$body = array(
-			'app'    => $kintone['app'],
+			'app'     => $kintone['app'],
 			'records' => $data,
 		);
 
@@ -532,7 +585,7 @@ final class Kintone_API {
 
 		if ( is_wp_error( $res ) ) {
 			return $res;
-		} elseif ( $res['response']['code'] !== 200 ) {
+		} elseif ( 200 !== $res['response']['code'] ) {
 			$message = json_decode( $res['body'], true );
 			$e       = new \WP_Error();
 			$e->add( 'validation-error', $message['message'], $message );
@@ -542,17 +595,31 @@ final class Kintone_API {
 			return true;
 		}
 	}
-	public static function delete($kintone, $ids){
-		// Change Hosoya
+
+	/**
+	 * Delete records from Kintone API.
+	 *
+	 * @param  array  $kintone  Shortcode attributes it need for auth.
+	 *  $kintone['domain'] .
+	 *  $kintone['token'] .
+	 *  $kintone['basic_auth_user'] .
+	 *  $kintone['basic_auth_pass'] .
+	 *  $kintone['app'] .
+	 * @param  string $ids  IDs of records to delete.
+	 * @return array true or WP_Error object
+	 * @since  0.1
+	 */
+	public static function delete( $kintone, $ids ) {
+
 		$url = sprintf(
 			'https://%s/k/v1/records.json',
 			$kintone['domain']
 		);
 
 		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 		} else {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'] );
 		}
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -560,9 +627,8 @@ final class Kintone_API {
 
 		$headers['Content-Type'] = 'application/json';
 
-
 		$body = array(
-			'app'    => $kintone['app'],
+			'app' => $kintone['app'],
 			'ids' => $ids,
 		);
 
@@ -577,7 +643,7 @@ final class Kintone_API {
 
 		if ( is_wp_error( $res ) ) {
 			return $res;
-		} elseif ( $res['response']['code'] !== 200 ) {
+		} elseif ( 200 !== $res['response']['code'] ) {
 			$message = json_decode( $res['body'], true );
 			$e       = new \WP_Error();
 			$e->add( 'validation-error', $message['message'], $message );
@@ -588,18 +654,31 @@ final class Kintone_API {
 		}
 	}
 
+	/**
+	 * Update records from Kintone API.
+	 *
+	 * @param  array  $kintone  Shortcode attributes it need for auth.
+	 *  $kintone['domain'] .
+	 *  $kintone['token'] .
+	 *  $kintone['basic_auth_user'] .
+	 *  $kintone['basic_auth_pass'] .
+	 *  $kintone['app'] .
+	 * @param  string $data  $_POST data.
+	 * @param  array  $update_key_date  Update key date.
+	 * @return array true or WP_Error object
+	 * @since  0.1
+	 */
 	public static function put( $kintone, $data, $update_key_date = array() ) {
 
-		// Change Hosoya
 		$url = sprintf(
 			'https://%s/k/v1/record.json',
 			$kintone['domain']
 		);
 
 		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 		} else {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'] );
 		}
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -607,12 +686,11 @@ final class Kintone_API {
 
 		$headers['Content-Type'] = 'application/json';
 
-
 		if ( empty( $update_key_date ) ) {
 			$body = array(
 				'app'    => $kintone['app'],
 				'id'     => $kintone['id'],
-				'record' => $data
+				'record' => $data,
 			);
 		} else {
 			$body = array(
@@ -622,7 +700,6 @@ final class Kintone_API {
 			);
 		}
 
-
 		$res = wp_remote_post(
 			$url,
 			array(
@@ -645,18 +722,30 @@ final class Kintone_API {
 		}
 	}
 
+	/**
+	 * Update records from Kintone API.
+	 *
+	 * @param  array  $kintone  Shortcode attributes it need for auth.
+	 *  $kintone['domain'] .
+	 *  $kintone['token'] .
+	 *  $kintone['basic_auth_user'] .
+	 *  $kintone['basic_auth_pass'] .
+	 *  $kintone['app'] .
+	 * @param  string $data  $_POST data.
+	 * @return array true or WP_Error object
+	 * @since  0.1
+	 */
 	public static function puts( $kintone, $data ) {
 
-		// Change Hosoya
 		$url = sprintf(
 			'https://%s/k/v1/records.json',
 			$kintone['domain']
 		);
 
 		if ( isset( $kintone['basic_auth_user'] ) && isset( $kintone['basic_auth_pass'] ) ) {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'], $kintone['basic_auth_user'], $kintone['basic_auth_pass'] );
 		} else {
-			$headers = Kintone_API::get_request_headers( "", "", $kintone['token'] );
+			$headers = self::get_request_headers( '', '', $kintone['token'] );
 		}
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -665,7 +754,7 @@ final class Kintone_API {
 		$headers['Content-Type'] = 'application/json';
 		$body                    = array(
 			'app'     => $kintone['app'],
-			'records' => $data
+			'records' => $data,
 		);
 
 		$res = wp_remote_post(
@@ -690,6 +779,19 @@ final class Kintone_API {
 		}
 	}
 
+	/**
+	 * Get attachement file from Kintone API.
+	 *
+	 * @param  array $kintone  Shortcode attributes it need for auth.
+	 * $kintone['domain'] .
+	 * $kintone['token'] .
+	 * $kintone['basic_auth_user'] .
+	 * $kintone['basic_auth_pass'] .
+	 * @param  array $file_info  File info.
+	 * $file_info['fileKey'] .
+	 * @return array true or WP_Error object
+	 * @since  0.1
+	 */
 	public static function get_attachement_file( $kintone, $file_info ) {
 		$url = sprintf(
 			'https://%s/k/v1/file.json?fileKey=%s',
@@ -719,6 +821,17 @@ final class Kintone_API {
 		return $res['body'];
 	}
 
+	/**
+	 * Get attachement file key from Kintone API.
+	 *
+	 * @param  array $kintone  Shortcode attributes it need for auth.
+	 * $kintone['domain'] .
+	 * $kintone['token'] .
+	 * $kintone['basic_auth_user'] .
+	 * $kintone['basic_auth_pass'] .
+	 * @return array true or WP_Error object
+	 * @since  0.1
+	 */
 	public static function get_attachement_file_key( $kintone ) {
 		$file_path = $_FILES['file']['tmp_name'];
 		$file_name = $_FILES['file']['name'];
@@ -750,9 +863,22 @@ final class Kintone_API {
 		return $res['body'];
 	}
 
+	/**
+	 * Get attachement file key from Kintone API.
+	 *
+	 * @param  array  $kintone  Shortcode attributes it need for auth.
+	 *  $kintone['domain'] .
+	 *  $kintone['token'] .
+	 *  $kintone['basic_auth_user'] .
+	 *  $kintone['basic_auth_pass'] .
+	 * @param  string $url  URL of file.
+	 * @param  string $file_name  File name.
+	 * @return array true or WP_Error object
+	 * @since  0.1
+	 */
 	public static function get_attachement_file_key_from_url( $kintone, $url, $file_name ) {
 		$file_data = file_get_contents( $url );
-		$enc_file   = base64_encode( $file_data );
+		$enc_file  = base64_encode( $file_data );
 		$img_info  = getimagesize( 'data:application/octet-stream;base64,' . $enc_file );
 
 		$boundary = '----' . microtime( true );
@@ -763,7 +889,7 @@ final class Kintone_API {
 			$kintone['domain']
 		);
 
-		$res = wp_remote_post(
+		$res      = wp_remote_post(
 			$request_url,
 			array(
 				'headers' => array(
@@ -774,7 +900,7 @@ final class Kintone_API {
 				'body'    => $body,
 			)
 		);
-		$file_key           = json_decode( $res['body'], true );
+		$file_key = json_decode( $res['body'], true );
 
 		return $file_key;
 	}
