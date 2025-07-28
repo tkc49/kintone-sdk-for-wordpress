@@ -2,7 +2,7 @@
 /**
  * Kintone_SDK_For_WordPress
  *
- * @version 1.7.2
+ * @version 1.8.0
  */
 namespace Tkc49\Kintone_SDK_For_WordPress;
 
@@ -491,7 +491,7 @@ final class Kintone_API {
 	 *  $kintone['basic_auth_pass'] .
 	 *  $kintone['app'] .
 	 * @param  string $data  $_POST data.
-	 * @return array true or WP_Error object
+	 * @return array|WP_Error Array with 'id' and 'revision' on success, or WP_Error object on failure
 	 * @since  0.1
 	 */
 	public static function post( $kintone, $data ) {
@@ -535,7 +535,7 @@ final class Kintone_API {
 
 			return $e;
 		} else {
-			return true;
+			return json_decode( $res['body'], true );
 		}
 	}
 
@@ -549,7 +549,7 @@ final class Kintone_API {
 	 *  $kintone['basic_auth_pass'] .
 	 *  $kintone['app'] .
 	 * @param  string $data  $_POST data.
-	 * @return array true or WP_Error object
+	 * @return array|WP_Error Array with 'ids' and 'revisions' on success, or WP_Error object on failure
 	 */
 	public static function posts( $kintone, $data ) {
 
@@ -592,7 +592,7 @@ final class Kintone_API {
 
 			return $e;
 		} else {
-			return true;
+			return json_decode( $res['body'], true );
 		}
 	}
 
@@ -665,7 +665,7 @@ final class Kintone_API {
 	 *  $kintone['app'] .
 	 * @param  string $data  $_POST data.
 	 * @param  array  $update_key_date  Update key date.
-	 * @return array true or WP_Error object
+	 * @return array|WP_Error Array with 'revision' on success, or WP_Error object on failure
 	 * @since  0.1
 	 */
 	public static function put( $kintone, $data, $update_key_date = array() ) {
@@ -718,7 +718,7 @@ final class Kintone_API {
 
 			return $e;
 		} else {
-			return true;
+			return json_decode( $res['body'], true );
 		}
 	}
 
@@ -732,7 +732,7 @@ final class Kintone_API {
 	 *  $kintone['basic_auth_pass'] .
 	 *  $kintone['app'] .
 	 * @param  string $data  $_POST data.
-	 * @return array true or WP_Error object
+	 * @return array|WP_Error Array with 'records' containing id and revision for each record on success, or WP_Error object on failure
 	 * @since  0.1
 	 */
 	public static function puts( $kintone, $data ) {
@@ -775,7 +775,7 @@ final class Kintone_API {
 
 			return $e;
 		} else {
-			return true;
+			return json_decode( $res['body'], true );
 		}
 	}
 
