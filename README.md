@@ -480,16 +480,7 @@ This project is licensed under the GPL-2.0-or-later License.
 
 ## Changelog
 
-### 1.8.0 (2025-07-28)
-
-### 1.7.2 (2024-10-05)
-
-- Fix: Resolved an infinite loop bug in getRecords method when $limit is set to 500
-- Refactor: General code refactoring
-
-### 1.7.0 (2023-01-11)
-
-- Fix: Addressed "Uncaught Error: Cannot use object of type WP_Error as array"
+See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes.
 
 ## Support
 
