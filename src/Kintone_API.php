@@ -2,7 +2,7 @@
 /**
  * Kintone_SDK_For_WordPress
  *
- * @version 1.7.2
+ * @version 1.8.0
  */
 namespace Tkc49\Kintone_SDK_For_WordPress;
 

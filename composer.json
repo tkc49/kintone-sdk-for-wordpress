@@ -1,26 +1,55 @@
 {
 	"name": "tkc49/kintone-sdk-for-wordpress",
-	"description": "Kintone sdk for WordPress is library for WordPress",
+	"description": "WordPress plugin development library for Kintone REST API integration",
 	"type": "library",
 	"license": "GPL-2.0-or-later",
 	"homepage": "https://github.com/tkc49/kintone-sdk-for-wordpress",
-	"keywords": ["WordPress", "kintone"],
+	"keywords": ["WordPress", "kintone", "REST API", "SDK", "plugin"],
 	"authors": [
 		{
 			"name": "tkc49",
-			"email": "h.tkc49@gmail.com"
+			"email": "h.tkc49@gmail.com",
+			"homepage": "https://github.com/tkc49"
 		}
 	],
+	"support": {
+		"issues": "https://github.com/tkc49/kintone-sdk-for-wordpress/issues",
+		"source": "https://github.com/tkc49/kintone-sdk-for-wordpress"
+	},
 	"require": {
 		"php": ">=5.6"
 	},
 	"require-dev": {
-		"phpunit/phpunit": "^5.6"
+		"phpunit/phpunit": "^5.6 || ^6.0 || ^7.0 || ^8.0 || ^9.0",
+		"squizlabs/php_codesniffer": "^3.5",
+		"wp-coding-standards/wpcs": "^2.3",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"dealerdirect/phpcodesniffer-composer-installer": "^0.7",
+		"yoast/phpunit-polyfills": "^1.0"
 	},
 	"autoload": {
 		"psr-4": {
-			"Tkc49\\Kintone_SDK_For_WordPress\\" : "src/"
+			"Tkc49\\Kintone_SDK_For_WordPress\\": "src/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Tkc49\\Kintone_SDK_For_WordPress\\Tests\\": "tests/"
+		}
+	},
+	"scripts": {
+		"test": "phpunit",
+		"test:unit": "phpunit --testsuite unit",
+		"test:integration": "phpunit --testsuite integration",
+		"test:coverage": "phpunit --coverage-html coverage",
+		"phpcs": "phpcs",
+		"phpcbf": "phpcbf",
+		"lint": "composer run phpcs",
+		"fix": "composer run phpcbf"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
 		}
 	}
-
 }

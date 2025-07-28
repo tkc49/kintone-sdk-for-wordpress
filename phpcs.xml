@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<ruleset name="Kintone SDK for WordPress">
+	<description>Coding standards for Kintone SDK for WordPress</description>
+
+	<!-- What to scan -->
+	<file>src/</file>
+	<exclude-pattern>vendor/</exclude-pattern>
+	<exclude-pattern>tests/</exclude-pattern>
+
+	<!-- How to scan -->
+	<arg value="s"/><!-- Show sniff names -->
+	<arg value="p"/><!-- Show progress -->
+	<arg value="l"/><!-- Show line numbers -->
+	<arg name="colors"/>
+	<arg name="extensions" value="php"/>
+
+	<!-- Rules: WordPress Coding Standards -->
+	<rule ref="WordPress-Core">
+		<!-- Allow for theme specific exceptions -->
+		<exclude name="WordPress.Files.FileName"/>
+		<exclude name="WordPress.NamingConventions.ValidHookName"/>
+	</rule>
+
+	<rule ref="WordPress-Docs"/>
+
+	<rule ref="WordPress-Extra">
+		<!-- Allow short array syntax -->
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+		<!-- Allow long array syntax for now -->
+		<exclude name="Generic.Arrays.DisallowLongArraySyntax"/>
+	</rule>
+
+	<!-- Check for PHP compatibility -->
+	<rule ref="PHPCompatibility"/>
+	<config name="testVersion" value="5.6-"/>
+
+	<!-- Rules: PSR2 compatibility -->
+	<rule ref="PSR2">
+		<!-- WordPress uses tabs, not spaces -->
+		<exclude name="Generic.WhiteSpace.DisallowTabIndent"/>
+	</rule>
+
+	<!-- Allow . in hook names -->
+	<rule ref="WordPress.NamingConventions.ValidHookName">
+		<properties>
+			<property name="additionalWordDelimiters" value="."/>
+		</properties>
+	</rule>
+
+	<!-- Verify that the text_domain is set to the desired text-domain -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array" value="kintone-sdk-for-wordpress"/>
+		</properties>
+	</rule>
+
+	<!-- Allow for theme specific exceptions -->
+	<rule ref="WordPress.Files.FileName">
+		<properties>
+			<property name="strict_class_file_names" value="false"/>
+		</properties>
+	</rule>
+
+	<!-- Minimum supported version -->
+	<rule ref="WordPress.WP.DeprecatedFunctions">
+		<properties>
+			<property name="minimum_supported_version" value="4.7"/>
+		</properties>
+	</rule>
+
+	<!-- Class name exceptions -->
+	<rule ref="WordPress.NamingConventions.ValidClassName">
+		<properties>
+			<property name="custom_test_class_whitelist" type="array" value="Kintone_API"/>
+		</properties>
+	</rule>
+</ruleset>
