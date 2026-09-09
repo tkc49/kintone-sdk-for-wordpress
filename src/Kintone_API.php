@@ -2,7 +2,7 @@
 /**
  * Kintone_SDK_For_WordPress
  *
- * @version 1.8.1
+ * @version 1.9.0
  */
 namespace Tkc49\Kintone_SDK_For_WordPress;
 
@@ -878,19 +878,54 @@ final class Kintone_API {
 	 * $kintone['token'] .
 	 * $kintone['basic_auth_user'] .
 	 * $kintone['basic_auth_pass'] .
-	 * @return array true or WP_Error object
+	 * @param  array $file_data Optional. Upload the given file directly instead of
+	 *                          reading from $_FILES. Required keys:
+	 *                          'fileName' (string) and 'fileKey' (base64 encoded contents).
+	 *                          Necessary in contexts without a file upload, such as
+	 *                          Webhook handlers and cron jobs, where $_FILES is empty.
+	 * @return array|WP_Error Decoded response containing 'fileKey', or WP_Error object.
 	 * @since  0.1
 	 */
-	public static function get_attachement_file_key( $kintone ) {
-		$file_path = $_FILES['file']['tmp_name'];
-		$file_name = $_FILES['file']['name'];
-		$finfo     = finfo_open( FILEINFO_MIME_TYPE );
-		$mime_type = finfo_file( $finfo, $file_path );
-		$file_data = file_get_contents( $file_path );
-		finfo_close( $finfo );
+	public static function get_attachement_file_key( $kintone, $file_data = null ) {
+
+		if ( null !== $file_data ) {
+			// 呼び出し元から直接ファイルを渡された場合（Webhook や cron など
+			// $_FILES が存在しない文脈で使う）.
+			if ( ! isset( $file_data['fileName'], $file_data['fileKey'] ) ) {
+				return new \WP_Error( 'upload_error', 'file_data requires both fileName and fileKey' );
+			}
+
+			$file_name    = $file_data['fileName'];
+			$file_content = base64_decode( $file_data['fileKey'] );
+			$mime_type    = 'application/octet-stream';
+		} else {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			if ( ! isset( $_FILES['file']['tmp_name'], $_FILES['file']['name'] ) ) {
+				return new \WP_Error( 'upload_error', 'No file uploaded' );
+			}
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$file_path = $_FILES['file']['tmp_name'];
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$file_name = $_FILES['file']['name'];
+
+			if ( ! file_exists( $file_path ) ) {
+				return new \WP_Error( 'upload_error', 'File does not exist' );
+			}
+
+			$finfo = finfo_open( FILEINFO_MIME_TYPE );
+			if ( false === $finfo ) {
+				return new \WP_Error( 'upload_error', 'Failed to open fileinfo' );
+			}
+
+			$mime_type = finfo_file( $finfo, $file_path );
+			finfo_close( $finfo );
+
+			$file_content = file_get_contents( $file_path );
+		}
 
 		$boundary = '----' . microtime( true );
-		$body     = '--' . $boundary . "\r\n" . 'Content-Disposition: form-data; name="file"; filename="' . $file_name . '"' . "\r\n" . 'Content-Type: ' . $mime_type . "\r\n\r\n" . $file_data . "\r\n" . '--' . $boundary . '--';
+		$body     = '--' . $boundary . "\r\n" . 'Content-Disposition: form-data; name="file"; filename="' . $file_name . '"' . "\r\n" . 'Content-Type: ' . $mime_type . "\r\n\r\n" . $file_content . "\r\n" . '--' . $boundary . '--';
 
 		$request_url = sprintf(
 			'https://%s/k/v1/file.json',
@@ -909,7 +944,26 @@ final class Kintone_API {
 			)
 		);
 
-		return $res['body'];
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+
+		$return_value = json_decode( $res['body'], true );
+		if ( ! is_array( $return_value ) ) {
+			return new \WP_Error(
+				'kintone_invalid_response',
+				sprintf(
+					'kintone から JSON 以外の応答を受け取りました。応答の先頭: %s',
+					self::summarize_body( $res )
+				)
+			);
+		}
+
+		if ( isset( $return_value['message'] ) && isset( $return_value['code'] ) ) {
+			return new \WP_Error( $return_value['code'], $return_value['message'] );
+		}
+
+		return $return_value;
 	}
 
 	/**

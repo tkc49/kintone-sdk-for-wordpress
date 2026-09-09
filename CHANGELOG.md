@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-09-09
+
+### Added
+- `get_attachement_file_key()` に第2引数 `$file_data` を追加
+  - `array( 'fileName' => ..., 'fileKey' => base64エンコードした中身 )` を渡すと
+    `$_FILES` を経由せず直接アップロードできる
+  - Webhook ハンドラや cron など、**`$_FILES` が存在しない文脈**で必要。
+    従来はこれらの文脈で `$_FILES['file']` にアクセスして警告・Fatal になっていた
+
+### Fixed
+- `get_attachement_file_key()` の堅牢性を改善
+  - `$_FILES` 未設定時に `WP_Error` を返す（以前は未定義キーアクセスで警告）
+  - アップロードされたファイルが存在しない場合に `WP_Error` を返す
+  - `finfo_open()` の失敗を検出する
+    （以前は `finfo_file(): Argument #1 ($finfo) cannot be empty` で Fatal になっていた）
+  - kintone がエラーや JSON 以外を返した場合に `WP_Error` を返す
+
+### Breaking Changes
+- **重要**: `get_attachement_file_key()` の戻り値が**生の JSON 文字列から
+  デコード済み配列に変わりました**（PHPDoc の `@return array` に実装を合わせた形です）。
+  - Before: `'{"fileKey":"2026..."}'` （文字列）
+  - After: `array( 'fileKey' => '2026...' )` （配列）
+  - 呼び出し側で `json_decode()` している場合は削除してください。
+    `$result['fileKey']` で直接取得できます。
+
 ## [1.8.1] - 2026-09-09
 
 ### Fixed
