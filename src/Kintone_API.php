@@ -2,7 +2,7 @@
 /**
  * Kintone_SDK_For_WordPress
  *
- * @version 1.8.0
+ * @version 1.8.1
  */
 namespace Tkc49\Kintone_SDK_For_WordPress;
 
@@ -288,6 +288,15 @@ final class Kintone_API {
 			$result = self::get( $kintone, $query . ' limit ' . $limit, $fields );
 			if ( ! is_wp_error( $result ) ) {
 
+				// JSON としては妥当でも records を含まない応答があり得るため、
+				// array_merge() に null を渡す前に弾く。
+				if ( ! isset( $result['records'] ) || ! is_array( $result['records'] ) ) {
+					return new \WP_Error(
+						'kintone_invalid_response',
+						'kintone の応答に records が含まれていません。'
+					);
+				}
+
 				$all_records = array_merge( $all_records, $result['records'] );
 
 				$total_count = $result['totalCount'];
@@ -361,6 +370,15 @@ final class Kintone_API {
 
 			$result = self::get( $kintone, $query . ' limit ' . $limit . ' offset ' . $offset, $fields );
 			if ( ! is_wp_error( $result ) ) {
+
+				// JSON としては妥当でも records を含まない応答があり得るため、
+				// array_merge() に null を渡す前に弾く。
+				if ( ! isset( $result['records'] ) || ! is_array( $result['records'] ) ) {
+					return new \WP_Error(
+						'kintone_invalid_response',
+						'kintone の応答に records が含まれていません。'
+					);
+				}
 
 				$all_records = array_merge( $all_records, $result['records'] );
 
@@ -469,6 +487,22 @@ final class Kintone_API {
 			return $res;
 		} else {
 			$return_value = json_decode( $res['body'], true );
+
+			// kintone は過負荷時などに JSON 以外を返すことがある
+			// （502 / 503、ゲートウェイのエラーページ、切断されたレスポンス等）。
+			// その場合 json_decode() は null を返し、message / code の判定にも
+			// 掛からないため、以前は null がそのまま呼び出し元へ渡り、
+			// array_merge( Array, NULL ) などの Fatal を引き起こしていた。
+			if ( ! is_array( $return_value ) ) {
+				return new \WP_Error(
+					'kintone_invalid_response',
+					sprintf(
+						'kintone から JSON 以外の応答を受け取りました。応答の先頭: %s',
+						self::summarize_body( $res )
+					)
+				);
+			}
+
 			if ( isset( $return_value['message'] ) && isset( $return_value['code'] ) ) {
 
 				error_log( var_export( $return_value, true ) );
@@ -478,6 +512,21 @@ final class Kintone_API {
 				return $return_value;
 			}
 		}
+	}
+
+	/**
+	 * Summarize a response body for use in an error message.
+	 *
+	 * @param array $res Response from wp_remote_get() / wp_remote_post().
+	 * @return string Collapsed, truncated body.
+	 */
+	private static function summarize_body( $res ) {
+		$body = isset( $res['body'] ) && is_string( $res['body'] ) ? $res['body'] : '';
+		if ( '' === $body ) {
+			return '(空のレスポンス)';
+		}
+
+		return substr( trim( preg_replace( '/\s+/', ' ', $body ) ), 0, 200 );
 	}
 
 

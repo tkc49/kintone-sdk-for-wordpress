@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-09-09
+
+### Fixed
+- kintone が JSON 以外の応答を返したときに Fatal error になる問題を修正
+  - 過負荷時の 502 / 503、ゲートウェイのエラーページ、切断されたレスポンスなどで
+    `json_decode()` が `null` を返すと、`message` / `code` の判定にも掛からないため
+    `null` がそのまま呼び出し元へ渡っていた
+  - その結果 `getAllRecordsSortById()` / `getRecords()` の
+    `array_merge( $all_records, $result['records'] )` が
+    `TypeError: array_merge(): Argument #2 must be of type array, null given`
+    で異常終了していた
+  - `get()` が `WP_Error( 'kintone_invalid_response' )` を返すよう修正。
+    応答本文の先頭 200 文字をエラーメッセージに含め、原因を追跡できるようにした
+  - あわせて、JSON としては妥当でも `records` を含まない応答に対するガードを
+    ページングループにも追加した
+
+**影響**: 大量レコードを扱うアプリで、kintone 側の負荷が高いほど発生しやすい。
+本番環境で 1 日に 18 回の Fatal が観測された事例がある。
+このバージョンより前のすべてのリリースが対象。
+
 ## [1.8.0] - 2025-07-28
 
 ### Added
