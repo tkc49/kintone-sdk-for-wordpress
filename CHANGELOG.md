@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-09-09
+
+### Added
+- ページング取得に経過時間の上限を設けられるようにした
+  - `getAllRecordsSortById()` と `getRecords()` が、次のページを取りに行く前に
+    経過時間を確認し、上限を超えていれば `WP_Error( 'kintone_fetch_timeout' )` を返す
+  - **既定は 0（無制限）で、これまでの挙動と変わらない。** 打ち切りたい呼び出し元だけが
+    フィルタで秒数を指定する:
+    ```php
+    add_filter( 'kintone_sdk_max_elapsed_seconds', function () { return 50; } );
+    ```
+  - **打ち切り時に部分的なレコードは返さない。** 途中までの結果を返すと
+    呼び出し元が不完全な集計をして誤った値を書き戻すため、必ず `WP_Error` にする
+
+### なぜ必要か
+数十万件規模のアプリでは、バーコードなどで絞っても 1 回の取得が
+数分に達することがある（実測で 150 ページ / 355 秒）。
+Webhook のように応答期限がある文脈では途中で諦める必要がある。
+
+PHP の `max_execution_time` / `set_time_limit()` は Unix 系では
+システムコールの待ち時間を数えないため、処理時間のほぼ全部が cURL の
+応答待ちであるこの処理には効かない（実測で確認済み）。
+そのため SDK 側で経過時間を見る必要がある。
+
 ## [1.9.0] - 2026-09-09
 
 ### Added

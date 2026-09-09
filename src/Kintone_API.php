@@ -2,7 +2,7 @@
 /**
  * Kintone_SDK_For_WordPress
  *
- * @version 1.9.0
+ * @version 1.9.1
  */
 namespace Tkc49\Kintone_SDK_For_WordPress;
 
@@ -276,6 +276,9 @@ final class Kintone_API {
 		$fields[] = '$id';
 		$fields   = array_unique( $fields );
 
+		$budget     = self::get_elapsed_budget();
+		$started_at = microtime( true );
+
 		$continue = true;
 		while ( $continue ) {
 
@@ -308,6 +311,16 @@ final class Kintone_API {
 						$continue = false;
 				} else {
 					$current_id = $result['records'][ count( $result['records'] ) - 1 ]['$id']['value'];
+				}
+
+				// 打ち切り判定は「次のページを取りに行く前」に行う。
+				// 途中までのレコードを返すと呼び出し元が不完全な集計をしてしまうため、
+				// 必ず WP_Error を返して部分データを渡さない。
+				if ( $continue ) {
+					$elapsed = self::exceeded_budget( $started_at, $budget );
+					if ( false !== $elapsed ) {
+						return self::budget_error( $elapsed, $budget, count( $all_records ), $total_count );
+					}
 				}
 			} else {
 				return new \WP_Error( $result->get_error_code(), $result->get_error_message() );
@@ -364,9 +377,20 @@ final class Kintone_API {
 		$current_loop_count = 0;
 		$total_count        = 0;
 
+		$budget     = self::get_elapsed_budget();
+		$started_at = microtime( true );
+
 		while ( $continue ) {
 
 			++$current_loop_count;
+
+			// 2 ページ目以降を取りに行く前に、経過時間の上限を超えていないか確認する。
+			if ( $current_loop_count > 1 ) {
+				$elapsed = self::exceeded_budget( $started_at, $budget );
+				if ( false !== $elapsed ) {
+					return self::budget_error( $elapsed, $budget, count( $all_records ), $total_count );
+				}
+			}
 
 			$result = self::get( $kintone, $query . ' limit ' . $limit . ' offset ' . $offset, $fields );
 			if ( ! is_wp_error( $result ) ) {
@@ -512,6 +536,76 @@ final class Kintone_API {
 				return $return_value;
 			}
 		}
+	}
+
+	/**
+	 * Get the elapsed-time budget for paginated fetches, in seconds.
+	 *
+	 * ページングは対象レコード数に比例して REST 呼び出しが増えるため、
+	 * 数十万件規模のアプリでは 1 回の取得が数分に達することがある。
+	 * Webhook のように応答期限がある文脈では、途中で打ち切りたい。
+	 *
+	 * PHP の max_execution_time は Unix 系ではシステムコールの待ち時間を
+	 * 数えないため、cURL の応答待ちが大半を占めるこの処理には効かない。
+	 * そのため経過時間を自前で見る必要がある。
+	 *
+	 * 既定は 0（無制限）で、これまでの挙動と変わらない。
+	 * 打ち切りたい呼び出し元だけがフィルタで秒数を指定する。
+	 *
+	 *     add_filter( 'kintone_sdk_max_elapsed_seconds', function () { return 50; } );
+	 *
+	 * @return int Seconds. 0 means unlimited.
+	 */
+	private static function get_elapsed_budget() {
+		if ( ! function_exists( 'apply_filters' ) ) {
+			return 0;
+		}
+
+		return max( 0, (int) apply_filters( 'kintone_sdk_max_elapsed_seconds', 0 ) );
+	}
+
+	/**
+	 * Check whether the elapsed-time budget has been exceeded.
+	 *
+	 * @param float $started_at Result of microtime( true ) when the fetch began.
+	 * @param int   $budget     Budget in seconds. 0 disables the check.
+	 * @return float|false Elapsed seconds if exceeded, false otherwise.
+	 */
+	private static function exceeded_budget( $started_at, $budget ) {
+		if ( $budget <= 0 ) {
+			return false;
+		}
+
+		$elapsed = microtime( true ) - $started_at;
+
+		return $elapsed >= $budget ? $elapsed : false;
+	}
+
+	/**
+	 * Build the error returned when a paginated fetch is cut short.
+	 *
+	 * 部分的なレコードは返さない。呼び出し元が不完全な集計をして
+	 * 誤った値を書き戻すのを防ぐため、必ず WP_Error にする。
+	 *
+	 * @param float $elapsed   Elapsed seconds.
+	 * @param int   $budget    Budget in seconds.
+	 * @param int   $fetched   Number of records fetched so far.
+	 * @param int   $remaining Records still matching the query at the last cursor
+	 *                         position. Note this is not the grand total, since the
+	 *                         query is narrowed by $id on every page.
+	 * @return \WP_Error
+	 */
+	private static function budget_error( $elapsed, $budget, $fetched, $remaining ) {
+		return new \WP_Error(
+			'kintone_fetch_timeout',
+			sprintf(
+				'kintone からの取得が制限時間を超えたため中止しました（%.1f 秒 / 上限 %d 秒）。%d 件まで取得した時点で残り約 %d 件。部分的な結果は返しません。',
+				$elapsed,
+				$budget,
+				$fetched,
+				max( 0, (int) $remaining - self::MAX_GET_RECORDS )
+			)
+		);
 	}
 
 	/**
